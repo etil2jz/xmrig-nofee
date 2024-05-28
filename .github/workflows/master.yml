@@ -26,48 +26,32 @@ jobs:
       with:
         msystem: MINGW64
         install: >-
-          base-devel
-          mingw-w64-x86_64-toolchain
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-ninja
+          mingw-w64-x86_64-gcc
+          git
+          make
 
-    - name: Update MSYS2 & Install dependencies
+    - name: Install CMake
       shell: msys2 {0}
-      run: |
-        pacman -Sy --noconfirm
-        pacman -S --noconfirm \
-          git \
-          make \
-          cmake \
-          mingw-w64-x86_64-cmake \
-          mingw-w64-x86_64-boost \
-          mingw-w64-x86_64-libuv \
-          mingw-w64-x86_64-pugixml \
-          mingw-w64-x86_64-openssl
+      run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --yes
 
     - name: Create build directory
       run: mkdir build
+      working-directory: xmrig
 
     - name: Configure CMake
       shell: msys2 {0}
-      run: |
-        cmake -G "Ninja" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-          -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-          ..
-      working-directory: build
+      run: cmake.exe .. -G "Unix Makefiles" -DXMRIG_DEPS=c:/xmrig-deps/gcc/x64
+      working-directory: xmrig/build
 
     - name: Build XMRig
-      shell: msys2 {0}
-      run: ninja
-      working-directory: build
+      run: make -j$(nproc)
+      working-directory: xmrig/build
 
     - name: Archive build
       uses: actions/upload-artifact@v4
       with:
         name: xmrig-windows
-        path: build/xmrig.exe
+        path: xmrig/build/xmrig.exe
 
   build-ubuntu:
     runs-on: ubuntu-latest
