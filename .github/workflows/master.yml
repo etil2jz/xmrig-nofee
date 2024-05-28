@@ -34,7 +34,8 @@ jobs:
     - name: Add MSYS2 to PATH
       run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
 
-    - name: Install dependencies
+    - name: Update MSYS2 & Install dependencies
+      shell: msys2 {0}
       run: |
         pacman -Sy --noconfirm
         pacman -S --noconfirm \
