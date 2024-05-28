@@ -1,0 +1,100 @@
+name: Build XMRig for Windows and Ubuntu
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '14'
+
+    - name: Set up MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: >-
+          base-devel
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-ninja
+
+    - name: Add MSYS2 to PATH
+      run: echo "::add-path::C:/msys64/mingw64/bin"
+
+    - name: Install dependencies
+      run: |
+        pacman -Sy --noconfirm
+        pacman -S --noconfirm \
+          git \
+          make \
+          cmake \
+          mingw-w64-x86_64-cmake \
+          mingw-w64-x86_64-boost \
+          mingw-w64-x86_64-libuv \
+          mingw-w64-x86_64-pugixml \
+          mingw-w64-x86_64-openssl
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure CMake
+      run: cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
+      working-directory: build
+
+    - name: Build XMRig
+      run: ninja
+      working-directory: build
+
+    - name: Archive build
+      uses: actions/upload-artifact@v4
+      with:
+        name: xmrig-windows
+        path: build/xmrig.exe
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          git \
+          build-essential \
+          cmake \
+          libuv1-dev \
+          libssl-dev \
+          libhwloc-dev
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure CMake
+      run: cmake -DCMAKE_BUILD_TYPE=Release ..
+      working-directory: build
+
+    - name: Build XMRig
+      run: make
+      working-directory: build
+
+    - name: Archive build
+      uses: actions/upload-artifact@v4
+      with:
+        name: xmrig-ubuntu
+        path: build/xmrig
