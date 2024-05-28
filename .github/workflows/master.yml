@@ -31,9 +31,6 @@ jobs:
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-ninja
 
-    - name: Add MSYS2 to PATH
-      run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
-
     - name: Update MSYS2 & Install dependencies
       shell: msys2 {0}
       run: |
@@ -52,10 +49,17 @@ jobs:
       run: mkdir build
 
     - name: Configure CMake
-      run: cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release ..
+      shell: msys2 {0}
+      run: |
+        cmake -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+          -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+          ..
       working-directory: build
 
     - name: Build XMRig
+      shell: msys2 {0}
       run: ninja
       working-directory: build
 
