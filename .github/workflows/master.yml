@@ -1,4 +1,4 @@
-name: Build XMRig for Windows and Ubuntu
+name: Build XMRig for Ubuntu
 
 on:
   push:
@@ -9,56 +9,6 @@ on:
       - master
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '14'
-
-    - name: Set up MSYS2
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        install: >-
-          mingw-w64-x86_64-gcc
-          git
-          make
-
-    - name: Install Chocolatey
-      run: |
-        Set-ExecutionPolicy Bypass -Scope Process -Force; `
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-    - name: Install CMake
-      shell: msys2 {0}
-      run: choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --yes
-
-    - name: Create build directory
-      run: mkdir build
-      working-directory: xmrig
-
-    - name: Configure CMake
-      shell: msys2 {0}
-      run: cmake.exe .. -G "Unix Makefiles" -DXMRIG_DEPS=c:/xmrig-deps/gcc/x64
-      working-directory: xmrig/build
-
-    - name: Build XMRig
-      run: make -j$(nproc)
-      working-directory: xmrig/build
-
-    - name: Archive build
-      uses: actions/upload-artifact@v4
-      with:
-        name: xmrig-windows
-        path: xmrig/build/xmrig.exe
-
   build-ubuntu:
     runs-on: ubuntu-latest
 
@@ -68,24 +18,28 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
+        sudo apt update
+        sudo apt install -y \
           git \
           build-essential \
           cmake \
-          libuv1-dev \
-          libssl-dev \
-          libhwloc-dev
+          automake \
+          libtool \
+          autoconf
 
     - name: Create build directory
       run: mkdir build
 
+    - name: Build dependencies
+      run: ./build_deps.sh
+      working-directory: scripts
+
     - name: Configure CMake
-      run: cmake -DCMAKE_BUILD_TYPE=Release ..
+      run: cmake .. -DXMRIG_DEPS=scripts/deps
       working-directory: build
 
     - name: Build XMRig
-      run: make
+      run: make -j$(nproc)
       working-directory: build
 
     - name: Archive build
