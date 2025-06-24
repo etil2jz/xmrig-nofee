@@ -1,6 +1,6 @@
 /* XMRig
  * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2016-2025 XMRig       <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,30 +16,17 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "backend/cpu/platform/BasicCpuInfo.h"
 
-#include "base/kernel/interfaces/IDnsListener.h"
-
-
-namespace xmrig {
+#include <sys/sysctl.h>
 
 
-class DnsRequest : public IDnsListener
+void xmrig::BasicCpuInfo::init_arm()
 {
-public:
-    XMRIG_DISABLE_COPY_MOVE_DEFAULT(DnsRequest)
+#   if __ARM_FEATURE_CRYPTO
+    m_flags.set(FLAG_AES, true); // FIXME
+#   endif
 
-    inline DnsRequest(IDnsListener *listener) : m_listener(listener) {}
-    ~DnsRequest() override = default;
-
-protected:
-    inline void onResolved(const DnsRecords &records, int status, const char *error) override {
-        m_listener->onResolved(records, status, error);
-    }
-
-private:
-    IDnsListener *m_listener;
-};
-
-
-} // namespace xmrig
+    size_t buflen = sizeof(m_brand);
+    sysctlbyname("machdep.cpu.brand_string", &m_brand, &buflen, nullptr, 0);
+}

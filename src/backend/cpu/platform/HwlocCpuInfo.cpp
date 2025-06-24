@@ -311,22 +311,35 @@ void xmrig::HwlocCpuInfo::processTopLevelCache(hwloc_obj_t cache, const Algorith
     uint32_t intensity      = algorithm.maxIntensity() == 1 ? 0 : 1;
 
     if (cache->attr->cache.depth == 3) {
-        for (size_t i = 0; i < cache->arity; ++i) {
-            hwloc_obj_t l2 = cache->children[i];
+        auto process_L2 = [&L2, &L2_associativity, L3_exclusive, this, &extra, scratchpad](hwloc_obj_t l2) {
             if (!hwloc_obj_type_is_cache(l2->type) || l2->attr == nullptr) {
-                continue;
+                return;
             }
 
             L2 += l2->attr->cache.size;
             L2_associativity = l2->attr->cache.associativity;
 
             if (L3_exclusive) {
-                if (vendor() == VENDOR_AMD) {
-                    extra += std::min<size_t>(l2->attr->cache.size, scratchpad);
+                if ((vendor() == VENDOR_AMD) && ((arch() == ARCH_ZEN4) || (arch() == ARCH_ZEN5))) {
+                    // Use extra L2 only on newer CPUs because older CPUs (Zen 3 and older) don't benefit from it.
+                    // For some reason, AMD CPUs can use only half of the exclusive L2/L3 cache combo efficiently
+                    extra += std::min<size_t>(l2->attr->cache.size / 2, scratchpad);
                 }
                 else if (l2->attr->cache.size >= scratchpad) {
                     extra += scratchpad;
                 }
+            }
+        };
+
+        for (size_t i = 0; i < cache->arity; ++i) {
+            hwloc_obj_t ch = cache->children[i];
+            if (ch->type == HWLOC_OBJ_GROUP) {
+                for (size_t j = 0; j < ch->arity; ++j) {
+                    process_L2(ch->children[j]);
+                }
+            }
+            else {
+                process_L2(ch);
             }
         }
     }

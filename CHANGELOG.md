@@ -1,3 +1,13 @@
+# v6.24.0
+- [#3671](https://github.com/xmrig/xmrig/pull/3671) Fixed detection of L2 cache size for some complex NUMA topologies.
+- [#3674](https://github.com/xmrig/xmrig/pull/3674) Fixed ARMv7 build.
+- [#3677](https://github.com/xmrig/xmrig/pull/3677) Fixed auto-config for AMD CPUs with less than 2 MB L3 cache per thread.
+- [#3678](https://github.com/xmrig/xmrig/pull/3678) Improved IPv6 support: the new default settings use IPv6 equally with IPv4.
+
+# v6.23.0
+- [#3668](https://github.com/xmrig/xmrig/issues/3668) Added support for Windows ARM64.
+- [#3665](https://github.com/xmrig/xmrig/pull/3665) Tweaked auto-config for AMD CPUs with < 2 MB L3 cache per thread.
+
 # v6.22.3
 - [#3605](https://github.com/xmrig/xmrig/pull/3605) CUDA backend: added missing RandomX dataset update.
 - [#3646](https://github.com/xmrig/xmrig/pull/3646) Optimized auto-config for AMD CPUs with less than 2 MB L3 cache per thread.

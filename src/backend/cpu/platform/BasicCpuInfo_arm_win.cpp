@@ -1,6 +1,6 @@
 /* XMRig
  * Copyright (c) 2018-2025 SChernykh   <https://github.com/SChernykh>
- * Copyright (c) 2016-2025 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright (c) 2016-2025 XMRig       <support@xmrig.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,30 +16,17 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "backend/cpu/platform/BasicCpuInfo.h"
 
-#include "base/kernel/interfaces/IDnsListener.h"
-
-
-namespace xmrig {
+#include <Windows.h>
 
 
-class DnsRequest : public IDnsListener
+void xmrig::BasicCpuInfo::init_arm()
 {
-public:
-    XMRIG_DISABLE_COPY_MOVE_DEFAULT(DnsRequest)
+    DWORD size         = sizeof(m_brand) - 1;
+    const char *subkey = "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
 
-    inline DnsRequest(IDnsListener *listener) : m_listener(listener) {}
-    ~DnsRequest() override = default;
+    RegGetValueA(HKEY_LOCAL_MACHINE, subkey, "ProcessorNameString", RRF_RT_REG_SZ, nullptr, m_brand, &size);
 
-protected:
-    inline void onResolved(const DnsRecords &records, int status, const char *error) override {
-        m_listener->onResolved(records, status, error);
-    }
-
-private:
-    IDnsListener *m_listener;
-};
-
-
-} // namespace xmrig
+    m_flags.set(FLAG_AES, IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE));
+}
