@@ -2,21 +2,20 @@ name: Build XMRig for Ubuntu
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    branches:
-      - master
+    branches: [master]
 
 jobs:
-  build-ubuntu:
+  build-linux:
+    name: Build on Ubuntu
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install build tools
       run: |
         sudo apt update
         sudo apt install -y \
@@ -28,22 +27,67 @@ jobs:
           autoconf
 
     - name: Create build directory
-      run: mkdir build
+      run: mkdir -p build
 
     - name: Build dependencies
       run: ./build_deps.sh
       working-directory: scripts
 
-    - name: Configure CMake
+    - name: Configure with CMake
       run: cmake .. -DXMRIG_DEPS=scripts/deps
       working-directory: build
 
-    - name: Build XMRig
+    - name: Compile XMRig
       run: make -j$(nproc)
       working-directory: build
 
-    - name: Archive build
+    - name: Upload Linux artifact
       uses: actions/upload-artifact@v4
       with:
-        name: xmrig-ubuntu
+        name: xmrig-linux
         path: build/xmrig
+
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install MSYS2 and dependencies
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          git
+          make
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-pkg-config
+        msystem: UCRT64
+
+    - name: Build dependencies
+      shell: msys2 {0}
+      run: |
+        cd scripts
+        ./build_deps.sh
+
+    - name: Configure with CMake
+      shell: msys2 {0}
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "Unix Makefiles" -DXMRIG_DEPS=$(cygpath -m ${PWD}/../scripts/deps)
+
+    - name: Compile XMRig
+      shell: msys2 {0}
+      run: |
+        cd build
+        make -j$(nproc)
+
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: xmrig-windows
+        path: build/xmrig.exe
